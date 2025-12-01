@@ -50,14 +50,14 @@ namespace ClickUpClone.Controllers
 
                 // Group tasks by status
                 var tasksByStatus = new Dictionary<string, int>();
-                foreach (var status in Enum.GetNames(typeof(TaskStatus)))
+                foreach (var status in Enum.GetNames(typeof(Models.TaskStatus)))
                 {
                     tasksByStatus[status] = userTasks.Count(t => t.Status.ToString() == status);
                 }
 
                 // Group tasks by priority
                 var tasksByPriority = new Dictionary<string, int>();
-                foreach (var priority in Enum.GetNames(typeof(TaskPriority)))
+                foreach (var priority in Enum.GetNames(typeof(Models.TaskPriority)))
                 {
                     tasksByPriority[priority] = userTasks.Count(t => t.Priority.ToString() == priority);
                 }
@@ -67,16 +67,16 @@ namespace ClickUpClone.Controllers
                     WorkspaceCount = workspaces.Count(),
                     ProjectCount = workspaces.Sum(w => w.ProjectCount ?? 0),
                     TaskCount = userTasks.Count(),
-                    OverdueTaskCount = userTasks.Count(t => t.DueDate.HasValue && t.DueDate < DateTime.Now && t.Status != TaskStatus.Done),
+                    OverdueTaskCount = userTasks.Count(t => t.DueDate.HasValue && t.DueDate < DateTime.Now && t.Status != Models.TaskStatus.Done),
                     UnreadNotificationCount = unreadNotifications.Count(),
                     CompletedTasksThisWeek = userTasks.Count(t => 
-                        t.Status == TaskStatus.Done && 
+                        t.Status == Models.TaskStatus.Done && 
                         t.UpdatedAt.HasValue &&
                         t.UpdatedAt >= DateTime.Now.AddDays(-7)),
                     RecentWorkspaces = workspaces.Take(5).ToList(),
                     MyTasks = userTasks.Take(10).ToList(),
                     OverdueTasks = userTasks
-                        .Where(t => t.DueDate.HasValue && t.DueDate < DateTime.Now && t.Status != TaskStatus.Done)
+                        .Where(t => t.DueDate.HasValue && t.DueDate < DateTime.Now && t.Status != Models.TaskStatus.Done)
                         .ToList(),
                     RecentNotifications = unreadNotifications.Take(5).ToList(),
                     TasksByStatus = tasksByStatus,
@@ -84,33 +84,6 @@ namespace ClickUpClone.Controllers
                 };
 
                 return View(vm);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Error loading dashboard: {ex.Message}");
-                TempData["ErrorMessage"] = "Error loading dashboard";
-                return RedirectToAction(nameof(Index));
-            }
-        }
-
-        [AllowAnonymous]
-        public IActionResult Privacy()
-        {
-            return View();
-        }
-
-        [AllowAnonymous]
-        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-        public IActionResult Error()
-        {
-            return View();
-        }
-    }
-}
-                ViewBag.UserTasks = userTasks;
-                ViewBag.UnreadNotificationCount = unreadNotifications.Count();
-
-                return View();
             }
             catch (Exception ex)
             {
