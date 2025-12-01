@@ -467,13 +467,13 @@ namespace ClickUpClone.Controllers
         public class BulkActionRequest
         {
             public List<int> TaskIds { get; set; }
-            public TaskStatus NewStatus { get; set; }
+            public Models.TaskStatus NewStatus { get; set; }
         }
 
         public class BulkPriorityRequest
         {
             public List<int> TaskIds { get; set; }
-            public TaskPriority NewPriority { get; set; }
+            public Models.TaskPriority NewPriority { get; set; }
         }
 
         public class BulkAssignRequest
@@ -485,3 +485,4 @@ namespace ClickUpClone.Controllers
         #endregion
     }
 }
+

@@ -157,7 +157,7 @@ namespace ClickUpClone.Services
         /// <summary>
         /// Update only task status (for AJAX calls)
         /// </summary>
-        public async Task<TaskDto> UpdateTaskStatusAsync(int id, TaskStatus status, string userId)
+        public async Task<TaskDto> UpdateTaskStatusAsync(int id, Models.TaskStatus status, string userId)
         {
             var task = await _taskRepository.GetByIdAsync(id);
             if (task == null)
@@ -186,7 +186,7 @@ namespace ClickUpClone.Services
         /// <summary>
         /// Update only task priority (for AJAX calls)
         /// </summary>
-        public async Task<TaskDto> UpdateTaskPriorityAsync(int id, TaskPriority priority, string userId)
+        public async Task<TaskDto> UpdateTaskPriorityAsync(int id, Models.TaskPriority priority, string userId)
         {
             var task = await _taskRepository.GetByIdAsync(id);
             if (task == null)
@@ -443,3 +443,4 @@ namespace ClickUpClone.Services
         }
     }
 }
+

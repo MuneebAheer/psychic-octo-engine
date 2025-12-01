@@ -280,7 +280,7 @@ namespace ClickUpClone.Repositories
                 .ToListAsync();
         }
 
-        public async Task<IEnumerable<Models.Task>> GetTasksByStatusAsync(int projectId, TaskStatus status)
+        public async Task<IEnumerable<Models.Task>> GetTasksByStatusAsync(int projectId, Models.TaskStatus status)
         {
             return await _context.Tasks
                 .Where(t => t.ProjectId == projectId && t.Status == status)
@@ -572,3 +572,4 @@ namespace ClickUpClone.Repositories
         }
     }
 }
+
