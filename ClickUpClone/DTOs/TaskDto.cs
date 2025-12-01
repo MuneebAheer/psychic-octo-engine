@@ -1,4 +1,4 @@
-using ClickUpClone.Models;
+﻿using ClickUpClone.Models;
 
 namespace ClickUpClone.DTOs
 {
@@ -11,8 +11,8 @@ namespace ClickUpClone.DTOs
         public int ProjectId { get; set; }
         public string? AssignedToId { get; set; }
         public string? AssignedToName { get; set; }
-        public TaskStatus Status { get; set; }
-        public TaskPriority Priority { get; set; }
+        public Models.TaskStatus Status { get; set; }
+        public Models.TaskPriority Priority { get; set; }
         public DateTime? DueDate { get; set; }
         public int Order { get; set; }
         public int SubtaskCount { get; set; }
@@ -26,7 +26,7 @@ namespace ClickUpClone.DTOs
         public string? Description { get; set; }
         public int ListId { get; set; }
         public string? AssignedToId { get; set; }
-        public TaskPriority Priority { get; set; } = TaskPriority.Normal;
+        public Models.TaskPriority Priority { get; set; } = Models.TaskPriority.Normal;
         public DateTime? DueDate { get; set; }
     }
 
@@ -35,8 +35,8 @@ namespace ClickUpClone.DTOs
         public string Title { get; set; } = string.Empty;
         public string? Description { get; set; }
         public string? AssignedToId { get; set; }
-        public TaskStatus Status { get; set; }
-        public TaskPriority Priority { get; set; }
+        public Models.TaskStatus Status { get; set; }
+        public Models.TaskPriority Priority { get; set; }
         public DateTime? DueDate { get; set; }
     }
 
