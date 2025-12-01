@@ -1,0 +1,26 @@
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Home";
+}
+
+<div class="jumbotron bg-light p-5 rounded-lg mb-4">
+    <h1 class="display-4">Welcome to ClickUp Clone</h1>
+    <p class="lead">A powerful project management and task tracking application.</p>
+    @if (!User.Identity?.IsAuthenticated == true)
+    {
+        <hr class="my-4">
+        <p>Manage your projects, teams, and tasks efficiently.</p>
+        <a class="btn btn-primary btn-lg" href="/account/register" role="button">Get Started</a>
+        <a class="btn btn-secondary btn-lg" href="/account/login" role="button">Login</a>
+    }
+</div>
+
+@if (User.Identity?.IsAuthenticated == true)
+{
+    <div class="row">
+        <div class="col-md-12">
+            <h3>Quick Overview</h3>
+            <p>Welcome back! Click on the navigation above to view your workspaces or manage tasks.</p>
+        </div>
+    </div>
+}

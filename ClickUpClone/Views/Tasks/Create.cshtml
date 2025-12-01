@@ -1,0 +1,58 @@
+@model ClickUpClone.DTOs.CreateTaskDto
+
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Create Task";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <h4 class="card-title mb-4">Create New Task</h4>
+
+                <form method="post">
+                    <div class="mb-3">
+                        <label class="form-label">Title <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" asp-for="Title" required maxlength="300" />
+                        <span class="text-danger" asp-validation-for="Title"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" asp-for="Description" rows="4"></textarea>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Priority</label>
+                            <select class="form-select" asp-for="Priority">
+                                <option value="2">Normal</option>
+                                <option value="3">Low</option>
+                                <option value="1">High</option>
+                                <option value="0">Urgent</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Due Date</label>
+                            <input type="date" class="form-control" asp-for="DueDate" />
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Assign To</label>
+                        <input type="text" class="form-control" asp-for="AssignedToId" placeholder="User ID or email" />
+                    </div>
+
+                    <input type="hidden" asp-for="ListId" />
+
+                    <div class="btn-group" role="group">
+                        <button type="submit" class="btn btn-success">Create Task</button>
+                        <a href="/tasks?listId=@Model.ListId" class="btn btn-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,40 @@
+@model IEnumerable<ClickUpClone.DTOs.WorkspaceDto>
+
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Workspaces";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>My Workspaces</h2>
+    <a href="/workspaces/create" class="btn btn-success">+ Create Workspace</a>
+</div>
+
+@if (Model.Any())
+{
+    <div class="row">
+        @foreach (var workspace in Model)
+        {
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">@workspace.Name</h5>
+                        <p class="card-text">@(workspace.Description?.Substring(0, Math.Min(50, workspace.Description.Length)) ?? "No description")</p>
+                        <p class="text-muted small">👥 @workspace.MemberCount members</p>
+                        <div class="btn-group" role="group">
+                            <a href="/workspaces/@workspace.Id" class="btn btn-sm btn-primary">View</a>
+                            <a href="/workspaces/@workspace.Id/edit" class="btn btn-sm btn-warning">Edit</a>
+                            <a href="/workspaces/@workspace.Id/members" class="btn btn-sm btn-info">Members</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <div class="alert alert-info">
+        <p>You don't have any workspaces yet. <a href="/workspaces/create">Create one now!</a></p>
+    </div>
+}

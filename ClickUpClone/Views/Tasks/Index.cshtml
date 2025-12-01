@@ -1,0 +1,55 @@
+@model IEnumerable<ClickUpClone.DTOs.TaskDto>
+
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Tasks";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Tasks</h2>
+    <a href="/tasks/create?listId=@ViewBag.ListId" class="btn btn-success">+ Create Task</a>
+</div>
+
+@if (Model.Any())
+{
+    <div class="list-view">
+        @foreach (var task in Model)
+        {
+            <div class="card task-item">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="flex-grow-1">
+                            <a href="/tasks/@task.Id" class="text-decoration-none">
+                                <h5 class="card-title">@task.Title</h5>
+                            </a>
+                            <p class="card-text text-muted">@(task.Description?.Substring(0, Math.Min(100, task.Description?.Length ?? 0)) ?? "")</p>
+                            <div class="mb-2">
+                                <span class="badge bg-info">@task.Status</span>
+                                <span class="badge bg-warning text-dark">@task.Priority</span>
+                                @if (task.AssignedToName != null)
+                                {
+                                    <span class="badge bg-secondary">👤 @task.AssignedToName</span>
+                                }
+                                @if (task.DueDate.HasValue)
+                                {
+                                    <span class="badge bg-secondary">📅 @task.DueDate.Value.ToString("MMM dd, yyyy")</span>
+                                }
+                            </div>
+                            @if (task.SubtaskCount > 0)
+                            {
+                                <small class="text-muted">✓ @task.CompletedSubtaskCount/@task.SubtaskCount subtasks</small>
+                            }
+                        </div>
+                        <a href="/tasks/@task.Id" class="btn btn-sm btn-outline-primary">View</a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <div class="alert alert-info">
+        No tasks in this list. <a href="/tasks/create?listId=@ViewBag.ListId">Create one</a>
+    </div>
+}

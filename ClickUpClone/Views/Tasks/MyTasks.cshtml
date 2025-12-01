@@ -1,0 +1,78 @@
+@model IEnumerable<ClickUpClone.DTOs.TaskDto>
+
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "My Tasks";
+}
+
+<h2>My Assigned Tasks</h2>
+
+<div class="mb-4">
+    <form method="get" action="/tasks/filtered" class="row g-3">
+        <div class="col-md-3">
+            <select class="form-select" name="status" onchange="this.form.submit()">
+                <option value="">All Statuses</option>
+                <option value="0" @(ViewBag.FilterStatus?.ToString() == "0" ? "selected" : "")>To Do</option>
+                <option value="1" @(ViewBag.FilterStatus?.ToString() == "1" ? "selected" : "")>In Progress</option>
+                <option value="2" @(ViewBag.FilterStatus?.ToString() == "2" ? "selected" : "")>In Review</option>
+                <option value="3" @(ViewBag.FilterStatus?.ToString() == "3" ? "selected" : "")>Done</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <select class="form-select" name="priority" onchange="this.form.submit()">
+                <option value="">All Priorities</option>
+                <option value="0" @(ViewBag.FilterPriority?.ToString() == "0" ? "selected" : "")>Urgent</option>
+                <option value="1" @(ViewBag.FilterPriority?.ToString() == "1" ? "selected" : "")>High</option>
+                <option value="2" @(ViewBag.FilterPriority?.ToString() == "2" ? "selected" : "")>Normal</option>
+                <option value="3" @(ViewBag.FilterPriority?.ToString() == "3" ? "selected" : "")>Low</option>
+            </select>
+        </div>
+    </form>
+</div>
+
+@if (Model.Any())
+{
+    <div class="list-view">
+        @foreach (var task in Model.OrderBy(t => t.DueDate))
+        {
+            <div class="card task-item">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="flex-grow-1">
+                            <a href="/tasks/@task.Id" class="text-decoration-none">
+                                <h5 class="card-title">@task.Title</h5>
+                            </a>
+                            <div class="mb-2">
+                                <span class="badge bg-info">@task.Status</span>
+                                <span class="badge bg-warning text-dark">@task.Priority</span>
+                                @if (task.DueDate.HasValue)
+                                {
+                                    var daysUntilDue = (task.DueDate.Value.Date - DateTime.Today).Days;
+                                    var badgeClass = daysUntilDue < 0 ? "bg-danger" : (daysUntilDue <= 3 ? "bg-warning text-dark" : "bg-secondary");
+                                    <span class="badge @badgeClass">📅 @task.DueDate.Value.ToString("MMM dd")</span>
+                                }
+                            </div>
+                            @if (task.SubtaskCount > 0)
+                            {
+                                <div class="progress" style="height: 6px;">
+                                    @{
+                                        var percentage = task.SubtaskCount > 0 ? (task.CompletedSubtaskCount * 100 / task.SubtaskCount) : 0;
+                                    }
+                                    <div class="progress-bar" role="progressbar" style="width: @percentage%"></div>
+                                </div>
+                                <small class="text-muted">✓ @task.CompletedSubtaskCount/@task.SubtaskCount</small>
+                            }
+                        </div>
+                        <a href="/tasks/@task.Id" class="btn btn-sm btn-outline-primary">View</a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <div class="alert alert-info">
+        No tasks assigned to you. Great job! 🎉
+    </div>
+}

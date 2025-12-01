@@ -1,0 +1,826 @@
+@using ClickUpClone.ViewModels.Tasks;
+@using ClickUpClone.Models;
+@model TaskBoardFilterViewModel
+
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = $"Kanban Board - {Model.Project?.Name ?? "Project"}";
+}
+
+<div class="page-header mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h1 class="h3 mb-0">
+                <i class="bi bi-kanban"></i>
+                Kanban Board
+            </h1>
+            @if (Model.Project != null)
+            {
+                <small class="text-muted d-block mt-1">@Model.Project.Name</small>
+            }
+        </div>
+        <div class="btn-group" role="group">
+            <a href="@Url.Action("Details", "Projects", new { id = Model.Project?.Id })" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Project
+            </a>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createTaskModal">
+                <i class="bi bi-plus-lg"></i> New Task
+            </button>
+        </div>
+    </div>
+
+    <!-- Statistics Bar -->
+    <div class="stats-bar mb-3">
+        <div class="row g-2 text-center">
+            <div class="col-6 col-sm-3">
+                <small class="text-muted">Total</small>
+                <div class="h5 mb-0">@Model.TotalTasksCount</div>
+            </div>
+            <div class="col-6 col-sm-3">
+                <small class="text-muted">In Progress</small>
+                <div class="h5 mb-0 text-warning">@Model.InProgressTasksCount</div>
+            </div>
+            <div class="col-6 col-sm-3">
+                <small class="text-muted">Completed</small>
+                <div class="h5 mb-0 text-success">@Model.CompletedTasksCount</div>
+            </div>
+            <div class="col-6 col-sm-3">
+                <small class="text-muted">Overdue</small>
+                <div class="h5 mb-0 text-danger">@Model.OverdueTasksCount</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Advanced Filter Bar -->
+    <div class="filter-bar">
+        <div class="row g-2">
+            <div class="col-md-4">
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                    <input type="text" class="form-control" id="searchInput" placeholder="Search tasks..." value="@Model.SearchTerm">
+                </div>
+            </div>
+            <div class="col-md-2">
+                <select class="form-select" id="priorityFilter">
+                    <option value="">All Priorities</option>
+                    <option value="Low" @(Model.FilterPriority == TaskPriority.Low ? "selected" : "")>Low</option>
+                    <option value="Normal" @(Model.FilterPriority == TaskPriority.Normal ? "selected" : "")>Normal</option>
+                    <option value="High" @(Model.FilterPriority == TaskPriority.High ? "selected" : "")>High</option>
+                    <option value="Urgent" @(Model.FilterPriority == TaskPriority.Urgent ? "selected" : "")>Urgent</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select class="form-select" id="statusFilter">
+                    <option value="">All Statuses</option>
+                    <option value="ToDo" @(Model.FilterStatus == TaskStatus.ToDo ? "selected" : "")>To Do</option>
+                    <option value="InProgress" @(Model.FilterStatus == TaskStatus.InProgress ? "selected" : "")>In Progress</option>
+                    <option value="InReview" @(Model.FilterStatus == TaskStatus.InReview ? "selected" : "")>In Review</option>
+                    <option value="Done" @(Model.FilterStatus == TaskStatus.Done ? "selected" : "")>Done</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button class="btn btn-outline-secondary w-100" id="clearFilters">
+                    <i class="bi bi-x-circle"></i> Clear
+                </button>
+            </div>
+            <div class="col-md-2">
+                <button class="btn btn-outline-info w-100" id="advancedFilterBtn" data-bs-toggle="modal" data-bs-target="#advancedFilterModal">
+                    <i class="bi bi-funnel"></i> More
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bulk Actions Bar (Hidden by default) -->
+    <div class="bulk-actions-bar mt-2" id="bulkActionsBar" style="display: none;">
+        <div class="alert alert-info mb-0">
+            <span id="selectedCount">0</span> tasks selected
+            <div class="btn-group float-end" role="group">
+                <button class="btn btn-sm btn-warning" id="bulkStatusBtn" data-bs-toggle="modal" data-bs-target="#bulkStatusModal">
+                    Change Status
+                </button>
+                <button class="btn btn-sm btn-info" id="bulkPriorityBtn" data-bs-toggle="modal" data-bs-target="#bulkPriorityModal">
+                    Change Priority
+                </button>
+                <button class="btn btn-sm btn-secondary" id="clearSelection">
+                    Clear Selection
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Kanban Board -->
+<div class="kanban-board" id="kanbanBoard">
+    @foreach (var status in Enum.GetValues(typeof(TaskStatus)).Cast<TaskStatus>())
+    {
+        var statusName = status.ToString();
+        <div class="kanban-column" data-status="@statusName">
+            <div class="column-header">
+                <h5 class="mb-0">
+                    <span class="status-badge status-@statusName.ToLower()">
+                        @statusName
+                    </span>
+                </h5>
+                <span class="badge bg-secondary task-count">
+                    @{
+                        var count = Model.TasksByList
+                            .SelectMany(kvp => kvp.Value)
+                            .Count(t => t.Status.ToString() == statusName);
+                    }
+                    @count
+                </span>
+            </div>
+
+            <div class="tasks-container" data-status="@statusName" ondrop="handleDrop(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
+                @{
+                    var tasksForStatus = Model.TasksByList
+                        .SelectMany(kvp => kvp.Value)
+                        .Where(t => t.Status.ToString() == statusName)
+                        .OrderBy(t => t.Priority.ToString())
+                        .ToList();
+                }
+
+                @if (tasksForStatus.Any())
+                {
+                    @foreach (var task in tasksForStatus)
+                    {
+                        <partial name="Components/_TaskCard" model="task" />
+                    }
+                }
+                else
+                {
+                    <div class="empty-state text-center py-4">
+                        <i class="bi bi-inbox"></i>
+                        <p class="text-muted small">No tasks yet</p>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Create Task Modal -->
+<div class="modal fade" id="createTaskModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create New Task</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="@Url.Action("Create", "Tasks")" id="createTaskForm">
+                <div class="modal-body">
+                    <div class="form-group mb-3">
+                        <label for="title" class="form-label">Title *</label>
+                        <input type="text" class="form-control" id="title" name="title" required>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label for="priority" class="form-label">Priority</label>
+                                <select class="form-select" id="priority" name="priority">
+                                    <option value="Low">Low</option>
+                                    <option value="Normal" selected>Normal</option>
+                                    <option value="High">High</option>
+                                    <option value="Urgent">Urgent</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label for="dueDate" class="form-label">Due Date</label>
+                                <input type="date" class="form-control" id="dueDate" name="dueDate">
+                            </div>
+                        </div>
+                    </div>
+
+                    <input type="hidden" id="listId" name="listId">
+                    <input type="hidden" id="projectId" name="projectId" value="@Model.Project?.Id ?? 0">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Task</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .page-header {
+        background: #fff;
+        padding: 20px;
+        border-radius: 8px;
+        border: 1px solid #e9ecef;
+        margin-bottom: 30px;
+    }
+
+    .filter-bar {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+    }
+
+    .filter-bar .input-group {
+        max-width: 500px;
+    }
+
+    .kanban-board {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        gap: 20px;
+        margin-top: 20px;
+        overflow-x: auto;
+        padding-bottom: 20px;
+    }
+
+    .kanban-column {
+        background: #f8f9fa;
+        border-radius: 8px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        min-height: 600px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .column-header {
+        background: #fff;
+        border-bottom: 2px solid #e9ecef;
+        padding: 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-shrink: 0;
+    }
+
+    .column-header h5 {
+        margin: 0;
+        font-weight: 600;
+    }
+
+    .status-badge {
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        display: inline-block;
+    }
+
+    .status-badge.status-todo {
+        background: #e7f3ff;
+        color: #0c5aa8;
+    }
+
+    .status-badge.status-inprogress {
+        background: #fff7e6;
+        color: #b35806;
+    }
+
+    .status-badge.status-inreview {
+        background: #fff1f0;
+        color: #8b0000;
+    }
+
+    .status-badge.status-done {
+        background: #f6ffed;
+        color: #274e0d;
+    }
+
+    .task-count {
+        font-size: 0.875rem;
+    }
+
+    .tasks-container {
+        flex: 1;
+        overflow-y: auto;
+        padding: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        min-height: 400px;
+    }
+
+    .tasks-container.drag-over {
+        background: #e3f2fd;
+        border: 2px dashed #2196f3;
+        transition: all 0.2s ease;
+    }
+
+    .task-card {
+        cursor: grab;
+        transition: all 0.2s ease;
+        min-height: 80px;
+    }
+
+    .task-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+    }
+
+    .task-card.dragging {
+        opacity: 0.5;
+        cursor: grabbing;
+    }
+
+    .task-card.hidden {
+        display: none;
+    }
+
+    .empty-state {
+        color: #adb5bd;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+    }
+
+    .empty-state i {
+        font-size: 3rem;
+        opacity: 0.3;
+        margin-bottom: 10px;
+    }
+
+    /* Scrollbar styling */
+    .tasks-container::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .tasks-container::-webkit-scrollbar-track {
+        background: #f1f1f1;
+    }
+
+    .tasks-container::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 3px;
+    }
+
+    .tasks-container::-webkit-scrollbar-thumb:hover {
+        background: #555;
+    }
+
+    /* Statistics Bar */
+    .stats-bar {
+        background: #fff;
+        padding: 15px;
+        border-radius: 8px;
+        border: 1px solid #e9ecef;
+    }
+
+    /* Filter Bar */
+    .filter-bar {
+        display: grid;
+        gap: 10px;
+        margin-top: 15px;
+    }
+
+    /* Bulk Actions Bar */
+    .bulk-actions-bar {
+        background: #fff3cd;
+        border: 1px solid #ffc107;
+        border-radius: 8px;
+        padding: 10px 15px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .bulk-actions-bar .alert {
+        margin: 0;
+    }
+
+    /* Task Card Selection */
+    .task-card.selected {
+        border: 2px solid #0d6efd;
+        background: #e7f1ff !important;
+    }
+
+    .task-card {
+        position: relative;
+    }
+
+    .task-card input[type="checkbox"] {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        cursor: pointer;
+    }
+
+    /* Mobile responsive */
+    @media (max-width: 768px) {
+        .kanban-board {
+            grid-template-columns: 1fr;
+        }
+
+        .page-header {
+            padding: 15px;
+        }
+
+        .filter-bar {
+            grid-template-columns: 1fr;
+        }
+
+        .filter-bar .input-group {
+            max-width: 100%;
+        }
+
+        .btn-group {
+            flex-direction: column;
+            width: 100%;
+        }
+
+        .btn-group > * {
+            width: 100%;
+            border-radius: 4px !important;
+        }
+
+        .stats-bar .row {
+            margin: 0 -5px;
+        }
+
+        .stats-bar .col-6,
+        .stats-bar .col-sm-3 {
+            padding: 5px;
+        }
+
+        .bulk-actions-bar {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .bulk-actions-bar .float-end {
+            width: 100% !important;
+            margin-top: 10px;
+        }
+    }
+</style>
+
+<script>
+    let draggedTaskId;
+    let draggedFromStatus;
+
+    // Initialize drag-drop and search
+    document.addEventListener('DOMContentLoaded', function () {
+        initializeDragDrop();
+        initializeSearch();
+        initializePriorityFilter();
+    });
+
+    function initializeDragDrop() {
+        const taskCards = document.querySelectorAll('.task-card:not(.hidden)');
+        taskCards.forEach(card => {
+            card.draggable = true;
+            card.addEventListener('dragstart', handleDragStart);
+            card.addEventListener('dragend', handleDragEnd);
+        });
+    }
+
+    function initializeSearch() {
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+            searchInput.addEventListener('input', filterTasks);
+        }
+    }
+
+    function initializePriorityFilter() {
+        const priorityFilter = document.getElementById('priorityFilter');
+        if (priorityFilter) {
+            priorityFilter.addEventListener('change', filterTasks);
+        }
+    }
+
+    function handleDragStart(e) {
+        draggedTaskId = e.currentTarget.getAttribute('data-task-id');
+        draggedFromStatus = e.currentTarget.closest('.tasks-container').getAttribute('data-status');
+        e.currentTarget.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+    }
+
+    function handleDragEnd(e) {
+        e.currentTarget.classList.remove('dragging');
+        document.querySelectorAll('.tasks-container').forEach(container => {
+            container.classList.remove('drag-over');
+        });
+    }
+
+    function handleDragOver(e) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        e.currentTarget.classList.add('drag-over');
+    }
+
+    function handleDragLeave(e) {
+        e.currentTarget.classList.remove('drag-over');
+    }
+
+    function handleDrop(e) {
+        e.preventDefault();
+        const dropZone = e.currentTarget;
+        dropZone.classList.remove('drag-over');
+
+        if (!draggedTaskId) return;
+
+        const newStatus = dropZone.getAttribute('data-status');
+
+        if (newStatus !== draggedFromStatus) {
+            // Call AJAX to update task status
+            updateTaskStatus(parseInt(draggedTaskId), newStatus);
+            
+            // Move card to new column
+            const draggedCard = document.querySelector(`[data-task-id="${draggedTaskId}"]`);
+            if (draggedCard && !draggedCard.classList.contains('hidden')) {
+                draggedCard.remove();
+                dropZone.appendChild(draggedCard);
+                draggedCard.classList.remove('dragging');
+                updateTaskCounts();
+            }
+        }
+    }
+
+    function updateTaskCounts() {
+        document.querySelectorAll('.kanban-column').forEach(column => {
+            const status = column.getAttribute('data-status');
+            const container = column.querySelector('.tasks-container');
+            const count = container.querySelectorAll('.task-card:not(.hidden)').length;
+            const badge = column.querySelector('.task-count');
+            
+            if (badge) {
+                badge.textContent = count;
+            }
+
+            // Show/hide empty state
+            const emptyState = container.querySelector('.empty-state');
+            if (count === 0) {
+                if (!emptyState) {
+                    const newEmptyState = document.createElement('div');
+                    newEmptyState.className = 'empty-state text-center py-4';
+                    newEmptyState.innerHTML = '<i class="bi bi-inbox"></i><p class="text-muted small">No tasks yet</p>';
+                    container.appendChild(newEmptyState);
+                }
+            } else {
+                if (emptyState) emptyState.remove();
+            }
+        });
+    }
+
+    function filterTasks() {
+        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+        const priorityFilter = document.getElementById('priorityFilter').value;
+        const statusFilter = document.getElementById('statusFilter')?.value || '';
+
+        const allCards = document.querySelectorAll('.task-card');
+        
+        allCards.forEach(card => {
+            const title = card.querySelector('h6')?.textContent.toLowerCase() || '';
+            const priority = card.querySelector('.badge')?.textContent || '';
+            const status = card.closest('.tasks-container')?.getAttribute('data-status') || '';
+            
+            const matchesSearch = searchTerm === '' || title.includes(searchTerm);
+            const matchesPriority = priorityFilter === '' || priority.includes(priorityFilter);
+            const matchesStatus = statusFilter === '' || status.toLowerCase() === statusFilter.toLowerCase();
+            
+            if (matchesSearch && matchesPriority && matchesStatus) {
+                card.classList.remove('hidden');
+            } else {
+                card.classList.add('hidden');
+            }
+        });
+
+        updateTaskCounts();
+    }
+
+    function toggleTaskSelection(taskId, event) {
+        event.preventDefault();
+        const card = event.currentTarget;
+        const checkbox = card.querySelector('input[type="checkbox"]');
+        
+        if (checkbox) {
+            checkbox.checked = !checkbox.checked;
+            card.classList.toggle('selected', checkbox.checked);
+            updateBulkActionsBar();
+        }
+    }
+
+    function updateBulkActionsBar() {
+        const selectedCards = document.querySelectorAll('.task-card.selected');
+        const bulkBar = document.getElementById('bulkActionsBar');
+        const selectedCount = document.getElementById('selectedCount');
+        
+        if (selectedCards.length > 0) {
+            bulkBar.style.display = 'block';
+            selectedCount.textContent = selectedCards.length;
+        } else {
+            bulkBar.style.display = 'none';
+        }
+    }
+
+    function clearSelection() {
+        document.querySelectorAll('.task-card.selected').forEach(card => {
+            card.classList.remove('selected');
+            const checkbox = card.querySelector('input[type="checkbox"]');
+            if (checkbox) checkbox.checked = false;
+        });
+        updateBulkActionsBar();
+    }
+
+    function getSelectedTaskIds() {
+        return Array.from(document.querySelectorAll('.task-card.selected')).map(card => 
+            parseInt(card.getAttribute('data-task-id'))
+        );
+    }
+
+    function applyBulkStatus() {
+        const statusSelect = document.getElementById('bulkStatusSelect');
+        const newStatus = statusSelect?.value;
+        
+        if (!newStatus) {
+            showNotification('Please select a status', 'warning');
+            return;
+        }
+
+        const taskIds = getSelectedTaskIds();
+        if (taskIds.length === 0) return;
+
+        fetch('/api/tasks/bulk/status', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value
+            },
+            body: JSON.stringify({ taskIds, newStatus })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification(`Updated ${data.updated} tasks`, 'success');
+                clearSelection();
+                location.reload();
+            } else {
+                showNotification('Error updating tasks', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('Error updating tasks', 'error');
+        });
+    }
+
+    function applyBulkPriority() {
+        const prioritySelect = document.getElementById('bulkPrioritySelect');
+        const newPriority = prioritySelect?.value;
+        
+        if (!newPriority) {
+            showNotification('Please select a priority', 'warning');
+            return;
+        }
+
+        const taskIds = getSelectedTaskIds();
+        if (taskIds.length === 0) return;
+
+        fetch('/api/tasks/bulk/priority', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value
+            },
+            body: JSON.stringify({ taskIds, newPriority })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification(`Updated ${data.updated} tasks`, 'success');
+                clearSelection();
+                location.reload();
+            } else {
+                showNotification('Error updating tasks', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('Error updating tasks', 'error');
+        });
+    }
+
+    // Initialize event listeners
+    document.addEventListener('DOMContentLoaded', function () {
+        initializeDragDrop();
+        initializeSearch();
+        initializePriorityFilter();
+
+        const statusFilter = document.getElementById('statusFilter');
+        if (statusFilter) {
+            statusFilter.addEventListener('change', filterTasks);
+        }
+
+        const clearFiltersBtn = document.getElementById('clearFilters');
+        if (clearFiltersBtn) {
+            clearFiltersBtn.addEventListener('click', function () {
+                document.getElementById('searchInput').value = '';
+                document.getElementById('priorityFilter').value = '';
+                document.getElementById('statusFilter').value = '';
+                filterTasks();
+            });
+        }
+
+        const clearSelectionBtn = document.getElementById('clearSelection');
+        if (clearSelectionBtn) {
+            clearSelectionBtn.addEventListener('click', clearSelection);
+        }
+    });
+</script>
+
+<!-- Advanced Filter Modal -->
+<div class="modal fade" id="advancedFilterModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Advanced Filters</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group mb-3">
+                    <label for="filterDueDateFrom" class="form-label">Due Date From</label>
+                    <input type="date" class="form-control" id="filterDueDateFrom">
+                </div>
+                <div class="form-group mb-3">
+                    <label for="filterDueDateTo" class="form-label">Due Date To</label>
+                    <input type="date" class="form-control" id="filterDueDateTo">
+                </div>
+                <div class="form-group mb-3">
+                    <label for="filterAssignedTo" class="form-label">Assigned To</label>
+                    <select class="form-select" id="filterAssignedTo">
+                        <option value="">Anyone</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal" onclick="applyAdvancedFilters()">Apply</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Status Modal -->
+<div class="modal fade" id="bulkStatusModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Change Status for Selected Tasks</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="bulkStatusSelect" class="form-label">New Status</label>
+                    <select class="form-select" id="bulkStatusSelect">
+                        <option value="">-- Select Status --</option>
+                        <option value="ToDo">To Do</option>
+                        <option value="InProgress">In Progress</option>
+                        <option value="InReview">In Review</option>
+                        <option value="Done">Done</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="applyBulkStatus()" data-bs-dismiss="modal">Update</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Priority Modal -->
+<div class="modal fade" id="bulkPriorityModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Change Priority for Selected Tasks</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="bulkPrioritySelect" class="form-label">New Priority</label>
+                    <select class="form-select" id="bulkPrioritySelect">
+                        <option value="">-- Select Priority --</option>
+                        <option value="Low">Low</option>
+                        <option value="Normal">Normal</option>
+                        <option value="High">High</option>
+                        <option value="Urgent">Urgent</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="applyBulkPriority()" data-bs-dismiss="modal">Update</button>
+            </div>
+        </div>
+    </div>
+</div>

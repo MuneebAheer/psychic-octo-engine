@@ -1,0 +1,49 @@
+<!-- File Upload Modal -->
+<div class="modal fade" id="fileUploadModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Upload File</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form onsubmit="handleFileUploadModal(event)" id="fileUploadForm">
+                <div class="modal-body">
+                    <div class="form-group mb-3">
+                        <label for="fileInput" class="form-label">Select File</label>
+                        <input type="file" class="form-control" id="fileInput" required>
+                        <small class="text-muted d-block mt-1">
+                            Max size: 10 MB | Allowed: PDF, DOC, DOCX, TXT, JPG, PNG, GIF, ZIP, XLSX
+                        </small>
+                    </div>
+
+                    <div class="progress" id="uploadProgress" style="display: none;">
+                        <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Upload</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentTaskIdForUpload;
+
+    function openFileUploadModal(taskId) {
+        currentTaskIdForUpload = taskId;
+        document.getElementById('fileUploadForm').reset();
+        new bootstrap.Modal(document.getElementById('fileUploadModal')).show();
+    }
+
+    function handleFileUploadModal(event) {
+        event.preventDefault();
+        const fileInput = document.getElementById('fileInput');
+        if (fileInput.files.length > 0 && currentTaskIdForUpload) {
+            uploadAttachment(currentTaskIdForUpload, fileInput.files[0]);
+            bootstrap.Modal.getInstance(document.getElementById('fileUploadModal')).hide();
+        }
+    }
+</script>

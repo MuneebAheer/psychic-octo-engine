@@ -1,0 +1,104 @@
+@using ClickUpClone.ViewModels.Workspaces
+@model IList<WorkspaceDto>
+
+<nav class="sidebar bg-light border-end" style="height: 100vh; position: sticky; top: 0; overflow-y: auto;">
+    <div class="p-3 border-bottom">
+        <h5 class="mb-0">
+            <i class="bi bi-box"></i> ClickUp Clone
+        </h5>
+    </div>
+
+    <!-- Workspaces Section -->
+    <div class="p-3">
+        <h6 class="sidebar-title text-muted small mb-3">WORKSPACES</h6>
+
+        <div class="workspace-list mb-3">
+            @foreach (var workspace in Model.Take(5))
+            {
+                <a href="@Url.Action("Details", "Workspaces", new { id = workspace.Id })" 
+                   class="sidebar-item d-flex align-items-center p-2 rounded text-decoration-none mb-2
+                          @(ViewBag.CurrentWorkspaceId == workspace.Id ? "active bg-primary text-white" : "text-dark")">
+                    <i class="bi bi-briefcase me-2"></i>
+                    <span class="flex-grow-1">@workspace.Name</span>
+                </a>
+            }
+        </div>
+
+        <a href="@Url.Action("Create", "Workspaces")" class="d-flex align-items-center p-2 text-primary text-decoration-none">
+            <i class="bi bi-plus-circle me-2"></i> New Workspace
+        </a>
+    </div>
+
+    <hr class="my-0">
+
+    <!-- Navigation Section -->
+    <div class="p-3">
+        <h6 class="sidebar-title text-muted small mb-3">NAVIGATION</h6>
+
+        <a href="@Url.Action("Dashboard", "Home")" 
+           class="sidebar-item d-flex align-items-center p-2 rounded text-decoration-none text-dark mb-2">
+            <i class="bi bi-speedometer2 me-2"></i> Dashboard
+        </a>
+
+        <a href="@Url.Action("MyTasks", "Tasks")" 
+           class="sidebar-item d-flex align-items-center p-2 rounded text-decoration-none text-dark mb-2">
+            <i class="bi bi-check-square me-2"></i> My Tasks
+        </a>
+
+        <a href="@Url.Action("Index", "Notifications")" 
+           class="sidebar-item d-flex align-items-center p-2 rounded text-decoration-none text-dark mb-2">
+            <i class="bi bi-bell me-2"></i> 
+            Notifications
+            @{
+                var unreadCount = (int?)ViewBag.UnreadNotificationCount ?? 0;
+                if (unreadCount > 0)
+                {
+                    <span class="badge bg-danger rounded-pill ms-auto">@unreadCount</span>
+                }
+            }
+        </a>
+
+        <a href="@Url.Action("Index", "ActivityLogs")" 
+           class="sidebar-item d-flex align-items-center p-2 rounded text-decoration-none text-dark">
+            <i class="bi bi-clock-history me-2"></i> Activity
+        </a>
+    </div>
+
+    <hr class="my-0">
+
+    <!-- User Section -->
+    <div class="p-3 mt-auto">
+        <div class="d-flex align-items-center">
+            <i class="bi bi-person-circle me-2"></i>
+            <small class="text-muted">@User.FindFirst("given_name")?.Value @User.FindFirst("family_name")?.Value</small>
+        </div>
+    </div>
+</nav>
+
+<style>
+    .sidebar {
+        width: 280px;
+    }
+
+    .sidebar-item {
+        transition: all 0.2s ease;
+    }
+
+    .sidebar-item:hover:not(.active) {
+        background-color: #f8f9fa;
+    }
+
+    .sidebar-item.active {
+        font-weight: 500;
+    }
+
+    .sidebar-title {
+        font-weight: 600;
+        letter-spacing: 0.5px;
+    }
+
+    .workspace-list {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+</style>

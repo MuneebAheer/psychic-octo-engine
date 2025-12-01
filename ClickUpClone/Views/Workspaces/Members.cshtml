@@ -1,0 +1,77 @@
+@model IEnumerable<ClickUpClone.DTOs.WorkspaceUserDto>
+
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Workspace Members";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Workspace Members</h2>
+    <a href="@Url.Action("Details", "Workspaces", new { id = ViewBag.WorkspaceId })" class="btn btn-secondary">Back</a>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Invite User</h5>
+                <form method="post" action="/workspaces/@ViewBag.WorkspaceId/InviteUser">
+                    @Html.AntiForgeryToken()
+                    <div class="mb-3">
+                        <label class="form-label">Email <span class="text-danger">*</span></label>
+                        <input type="email" class="form-control" name="Email" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Role <span class="text-danger">*</span></label>
+                        <select class="form-select" name="Role">
+                            <option value="2">Member</option>
+                            <option value="1">Admin</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Invite</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<h4>Current Members</h4>
+@if (Model.Any())
+{
+    <table class="table table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Joined</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var user in Model)
+            {
+                <tr>
+                    <td>@user.UserName</td>
+                    <td>@user.UserEmail</td>
+                    <td>
+                        <span class="badge bg-primary">@user.Role</span>
+                    </td>
+                    <td>@user.JoinedAt.ToString("MMM dd, yyyy")</td>
+                    <td>
+                        <form method="post" action="/workspaces/RemoveUser" style="display:inline;">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="workspaceId" value="@ViewBag.WorkspaceId" />
+                            <input type="hidden" name="workspaceUserId" value="@user.Id" />
+                            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Remove user?')">Remove</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>No members in this workspace.</p>
+}

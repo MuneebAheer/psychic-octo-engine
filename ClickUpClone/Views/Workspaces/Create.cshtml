@@ -1,0 +1,41 @@
+@model ClickUpClone.DTOs.CreateWorkspaceDto
+
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Create Workspace";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h4 class="card-title mb-4">Create New Workspace</h4>
+
+                <form method="post">
+                    <div class="mb-3">
+                        <label class="form-label">Workspace Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" asp-for="Name" required maxlength="200" />
+                        <span class="text-danger" asp-validation-for="Name"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" asp-for="Description" rows="3" maxlength="500"></textarea>
+                        <span class="text-danger" asp-validation-for="Description"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Color (Hex Code)</label>
+                        <input type="color" class="form-control form-control-color" asp-for="Color" />
+                        <small class="form-text text-muted">Choose a color to identify your workspace</small>
+                    </div>
+
+                    <div class="btn-group" role="group">
+                        <button type="submit" class="btn btn-success">Create Workspace</button>
+                        <a href="/workspaces" class="btn btn-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

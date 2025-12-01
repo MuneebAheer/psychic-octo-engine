@@ -1,0 +1,54 @@
+@model IEnumerable<ClickUpClone.Models.ActivityLog>
+
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Activity Log";
+}
+
+<h2>Activity Log
+    @if (!string.IsNullOrEmpty(ViewBag.WorkspaceName))
+    {
+        <small>- @ViewBag.WorkspaceName</small>
+    }
+    @if (!string.IsNullOrEmpty(ViewBag.ProjectName))
+    {
+        <small>- @ViewBag.ProjectName</small>
+    }
+</h2>
+
+@if (Model.Any())
+{
+    <div class="list-view">
+        @foreach (var activity in Model.OrderByDescending(a => a.CreatedAt))
+        {
+            <div class="card mb-2">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5 class="card-title">@activity.Type.ToString()</h5>
+                            <p class="card-text">@activity.Description</p>
+                            <small class="text-muted">
+                                By @(activity.User?.FirstName ?? "Unknown") @(activity.User?.LastName ?? "")
+                                on @activity.CreatedAt.ToString("MMM dd, yyyy HH:mm")
+                            </small>
+                        </div>
+                        @if (activity.TaskId.HasValue)
+                        {
+                            <a href="/tasks/@activity.TaskId" class="btn btn-sm btn-outline-primary">View Task</a>
+                        }
+                        else if (activity.ProjectId.HasValue)
+                        {
+                            <a href="/projects/@activity.ProjectId" class="btn btn-sm btn-outline-primary">View Project</a>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <div class="alert alert-info">
+        No activity yet.
+    </div>
+}

@@ -1,0 +1,52 @@
+@model IList<SubtaskDto>
+
+<div class="subtasks-section mt-4">
+    <h6 class="mb-3">Subtasks (@Model.Count)</h6>
+
+    @if (Model.Count > 0)
+    {
+        <div class="subtasks-list" id="subtasks-container">
+            @foreach (var subtask in Model.OrderBy(s => s.IsCompleted).ThenBy(s => s.CreatedAt))
+            {
+                <div class="form-check mb-2" data-subtask-id="@subtask.Id">
+                    <input class="form-check-input" type="checkbox" 
+                           id="subtask-@subtask.Id" 
+                           @if (subtask.IsCompleted) { <text>checked</text> }
+                           onchange="toggleSubtask(@subtask.Id)">
+                    <label class="form-check-label @(subtask.IsCompleted ? "text-decoration-line-through text-muted" : "")" 
+                           for="subtask-@subtask.Id">
+                        @subtask.Title
+                        <small class="text-muted ms-2">@subtask.CreatedAt.ToString("MMM dd")</small>
+                    </label>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <p class="text-muted">No subtasks yet</p>
+    }
+
+    <!-- Add Subtask Form -->
+    <form class="mt-3" onsubmit="addSubtaskHandler(event, @ViewBag.TaskId)">
+        <div class="input-group">
+            <input type="text" class="form-control" id="subtask-title" 
+                   placeholder="Add a subtask..." required>
+            <button class="btn btn-outline-primary" type="submit">
+                <i class="bi bi-plus"></i>
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+    function addSubtaskHandler(event, taskId) {
+        event.preventDefault();
+        const title = document.getElementById('subtask-title').value.trim();
+        if (title) {
+            // TODO: Implement addSubtask API call
+            console.log('Add subtask:', title);
+            document.getElementById('subtask-title').value = '';
+        }
+    }
+</script>

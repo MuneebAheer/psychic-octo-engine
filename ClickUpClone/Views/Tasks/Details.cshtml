@@ -1,0 +1,119 @@
+@model ClickUpClone.DTOs.TaskDto
+
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = Model.Title;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>@Model.Title</h2>
+    <div>
+        <a href="/tasks/@Model.Id/edit" class="btn btn-warning">Edit</a>
+        <form method="post" action="/tasks/@Model.Id/delete" style="display:inline;">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn btn-danger" onclick="return confirm('Delete task?')">Delete</button>
+        </form>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Description</h5>
+                <p>@(Model.Description ?? "No description")</p>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Subtasks</h5>
+            </div>
+            <div class="card-body">
+                @if (ViewBag.Subtasks != null && ViewBag.Subtasks.Count > 0)
+                {
+                    <table class="table table-sm">
+                        <tbody>
+                            @foreach (var subtask in ViewBag.Subtasks)
+                            {
+                                <tr>
+                                    <td>
+                                        <input type="checkbox" class="form-check-input" @(subtask.IsCompleted ? "checked" : "") 
+                                               onchange="toggleSubtask(@subtask.Id, @Model.Id)" />
+                                    </td>
+                                    <td class="@(subtask.IsCompleted ? "text-decoration-line-through text-muted" : "")">
+                                        @subtask.Title
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+                else
+                {
+                    <p class="text-muted">No subtasks yet.</p>
+                }
+
+                <form method="post" action="/tasks/@Model.Id/addsubtask" class="mt-3">
+                    @Html.AntiForgeryToken()
+                    <div class="input-group">
+                        <input type="text" class="form-control" name="Title" placeholder="Add a subtask..." />
+                        <input type="hidden" name="TaskId" value="@Model.Id" />
+                        <button class="btn btn-success" type="submit">Add</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Comments</h5>
+            </div>
+            <div class="card-body">
+                @if (ViewBag.Comments != null && ViewBag.Comments.Count > 0)
+                {
+                    @foreach (var comment in ViewBag.Comments)
+                    {
+                        <div class="mb-3 pb-3 border-bottom">
+                            <div class="d-flex justify-content-between">
+                                <strong>@comment.UserName</strong>
+                                <small class="text-muted">@comment.CreatedAt.ToString("MMM dd, yyyy HH:mm")</small>
+                            </div>
+                            <p class="mb-1">@comment.Content</p>
+                            @if (comment.IsEdited)
+                            {
+                                <small class="text-muted">(edited)</small>
+                            }
+                        </div>
+                    }
+                }
+                else
+                {
+                    <p class="text-muted">No comments yet.</p>
+                }
+
+                <form method="post" action="/tasks/@Model.Id/addcomment" class="mt-3">
+                    @Html.AntiForgeryToken()
+                    <div class="mb-3">
+                        <textarea class="form-control" name="Content" placeholder="Add a comment..." rows="3"></textarea>
+                        <input type="hidden" name="TaskId" value="@Model.Id" />
+                    </div>
+                    <button type="submit" class="btn btn-primary">Post Comment</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Details</h5>
+                <p><strong>Status:</strong> <span class="badge bg-info">@Model.Status</span></p>
+                <p><strong>Priority:</strong> <span class="badge bg-warning text-dark">@Model.Priority</span></p>
+                <p><strong>Assigned To:</strong> @(Model.AssignedToName ?? "Unassigned")</p>
+                <p><strong>Due Date:</strong> @(Model.DueDate?.ToString("MMM dd, yyyy") ?? "Not set")</p>
+                <p><strong>Created:</strong> @Model.CreatedAt.ToString("MMM dd, yyyy")</p>
+            </div>
+        </div>
+    </div>
+</div>

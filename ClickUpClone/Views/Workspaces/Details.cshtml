@@ -1,0 +1,55 @@
+@model ClickUpClone.DTOs.WorkspaceDto
+
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = Model.Name;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>@Model.Name</h2>
+    <div>
+        <a href="/workspaces/@Model.Id/edit" class="btn btn-warning">Edit</a>
+        <a href="/workspaces/@Model.Id/members" class="btn btn-info">Members</a>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Workspace Details</h5>
+                <p><strong>Description:</strong> @(Model.Description ?? "No description")</p>
+                <p><strong>Owner:</strong> @Model.OwnerName</p>
+                <p><strong>Members:</strong> @Model.MemberCount</p>
+                <p><strong>Created:</strong> @Model.CreatedAt.ToString("MMM dd, yyyy")</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <form method="post" action="/workspaces/@Model.Id/delete" style="margin-bottom:0;">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn btn-danger w-100" onclick="return confirm('Are you sure?')">Delete Workspace</button>
+        </form>
+    </div>
+</div>
+
+<h4>Projects</h4>
+@if (ViewBag.Projects != null && ViewBag.Projects.Count > 0)
+{
+    <div class="list-group mb-4">
+        @foreach (var project in ViewBag.Projects)
+        {
+            <a href="/projects/@project.Id" class="list-group-item list-group-item-action">
+                <h5 class="mb-1">@project.Name</h5>
+                <p class="mb-1">@(project.Description?.Substring(0, Math.Min(80, project.Description?.Length ?? 0)) ?? "No description")</p>
+                <small>Created by @project.CreatedByName</small>
+            </a>
+        }
+    </div>
+}
+else
+{
+    <p>No projects in this workspace. <a href="/projects/create?workspaceId=@Model.Id">Create one</a></p>
+}
+
+<a href="/projects/create?workspaceId=@Model.Id" class="btn btn-primary">+ New Project</a>
